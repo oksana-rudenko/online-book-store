@@ -1,6 +1,6 @@
 package springboot.onlinebookstore.repository.book.spec;
 
-import java.util.Arrays;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import springboot.onlinebookstore.model.Book;
@@ -15,7 +15,13 @@ public class TitleSpecificationProvider implements SpecificationProvider<Book> {
 
     @Override
     public Specification<Book> getSpecification(String[] params) {
-        return (root, query, criteriaBuilder)
-                -> root.get("title").in(Arrays.stream(params).toArray());
+        return (root, query, criteriaBuilder) -> {
+            Predicate predicate = criteriaBuilder.and(null);
+            for (String param : params) {
+                predicate = criteriaBuilder.and(predicate,
+                        criteriaBuilder.like(root.get("title"), "%" + param + "%"));
+            }
+            return predicate;
+        };
     }
 }

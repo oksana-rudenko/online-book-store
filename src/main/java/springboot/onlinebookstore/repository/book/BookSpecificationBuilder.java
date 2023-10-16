@@ -37,12 +37,6 @@ public class BookSpecificationBuilder implements SpecificationBuilder<Book> {
                     .getSpecificationProvider("price").getSpecification(searchParameters.price());
             specification = specification.and(priceSpecification);
         }
-        if (searchParameters.description() != null && searchParameters.description().length > 0) {
-            Specification<Book> descriptionSpecification = bookSpecificationProviderManager
-                    .getSpecificationProvider("description")
-                    .getSpecification(searchParameters.description());
-            specification = specification.and(descriptionSpecification);
-        }
         return specification;
     }
 }
