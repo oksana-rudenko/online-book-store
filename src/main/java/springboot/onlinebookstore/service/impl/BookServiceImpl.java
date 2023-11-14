@@ -3,16 +3,13 @@ package springboot.onlinebookstore.service.impl;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import springboot.onlinebookstore.dto.BookSearchParametersDto;
 import springboot.onlinebookstore.dto.request.CreateBookRequestDto;
 import springboot.onlinebookstore.dto.response.BookDto;
 import springboot.onlinebookstore.exception.EntityNotFoundException;
 import springboot.onlinebookstore.mapper.BookMapper;
 import springboot.onlinebookstore.model.Book;
 import springboot.onlinebookstore.repository.book.BookRepository;
-import springboot.onlinebookstore.repository.book.BookSpecificationBuilder;
 import springboot.onlinebookstore.service.BookService;
 
 @RequiredArgsConstructor
@@ -20,7 +17,6 @@ import springboot.onlinebookstore.service.BookService;
 public class BookServiceImpl implements BookService {
     private final BookRepository bookRepository;
     private final BookMapper bookMapper;
-    private final BookSpecificationBuilder bookSpecificationBuilder;
 
     @Override
     public BookDto save(CreateBookRequestDto requestDto) {
@@ -53,13 +49,5 @@ public class BookServiceImpl implements BookService {
         Book book = bookMapper.toModel(requestDto);
         book.setId(id);
         return bookMapper.toDto(bookRepository.save(book));
-    }
-
-    @Override
-    public List<BookDto> searchBooks(BookSearchParametersDto searchParameters, Pageable pageable) {
-        Specification<Book> specification = bookSpecificationBuilder.build(searchParameters);
-        return bookRepository.findAll(specification, pageable).stream()
-                .map(bookMapper::toDto)
-                .toList();
     }
 }
