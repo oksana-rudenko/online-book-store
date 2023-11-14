@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import springboot.onlinebookstore.dto.BookSearchParametersDto;
 import springboot.onlinebookstore.dto.request.CreateBookRequestDto;
 import springboot.onlinebookstore.dto.response.BookDto;
 import springboot.onlinebookstore.service.BookService;
@@ -60,12 +59,5 @@ public class BookController {
             description = "Soft deleting a book by its ID from book store")
     public void deleteById(@PathVariable Long id) {
         bookService.deleteById(id);
-    }
-
-    @GetMapping("/search")
-    @Operation(summary = "Search books by set of different parameters",
-            description = "Searching all available books from book store by given parameters")
-    public List<BookDto> searchBooks(BookSearchParametersDto searchParameters, Pageable pageable) {
-        return bookService.searchBooks(searchParameters, pageable);
     }
 }
