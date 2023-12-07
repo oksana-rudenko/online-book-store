@@ -2,6 +2,7 @@ package springboot.onlinebookstore.validation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import java.util.Objects;
 import org.springframework.beans.BeanWrapperImpl;
 
 public class FieldMatchValidator implements ConstraintValidator<FieldMatch, Object> {
@@ -21,9 +22,9 @@ public class FieldMatchValidator implements ConstraintValidator<FieldMatch, Obje
         Object repeatPasswordValue = new BeanWrapperImpl(o)
                 .getPropertyValue(repeatPassword);
         if (passwordValue != null) {
-            return passwordValue.equals(repeatPasswordValue);
+            return Objects.equals(passwordValue, repeatPasswordValue);
         } else {
-            return password.equals(repeatPassword);
+            return Objects.equals(password, repeatPassword);
         }
     }
 }
