@@ -3,7 +3,7 @@ package springboot.onlinebookstore.repository.book;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
-import springboot.onlinebookstore.dto.BookSearchParametersDto;
+import springboot.onlinebookstore.dto.book.BookSearchParametersDto;
 import springboot.onlinebookstore.model.Book;
 import springboot.onlinebookstore.repository.SpecificationBuilder;
 import springboot.onlinebookstore.repository.SpecificationProviderManager;

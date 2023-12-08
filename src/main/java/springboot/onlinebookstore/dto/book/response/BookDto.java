@@ -1,4 +1,4 @@
-package springboot.onlinebookstore.dto.response;
+package springboot.onlinebookstore.dto.book.response;
 
 import java.math.BigDecimal;
 import lombok.Data;
