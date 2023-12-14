@@ -1,0 +1,59 @@
+databaseChangeLog:
+  - changeSet:
+      id: insert users to user table
+      author: rudenko
+      changes:
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: email
+                  value: "bobSmith@example.com"
+              - column:
+                  name: password
+                  value: "$2a$10$j5vOyFFskzmJ8nuXW1IybOCgVZY7fQg0TohkSg1ius.riOiCI.PRK"
+              - column:
+                  name: first_name
+                  value: "Robert"
+              - column:
+                  name: last_name
+                  value: "Smith"
+              - column:
+                  name: shipping_address
+                  value: "Golden St, 12, L.A., USA"
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: email
+                  value: "aliceCooper@example.com"
+              - column:
+                  name: password
+                  value: "$2a$10$j5vOyFFskzmJ8nuXW1IybOCgVZY7fQg0TohkSg1ius.riOiCI.PRK"
+              - column:
+                  name: first_name
+                  value: "Alice"
+              - column:
+                  name: last_name
+                  value: "Cooper"
+              - column:
+                  name: shipping_address
+                  value: "123 St, London, GB"
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: email
+                  value: "karry@example.com"
+              - column:
+                  name: password
+                  value: "$2a$10$j5vOyFFskzmJ8nuXW1IybOCgVZY7fQg0TohkSg1ius.riOiCI.PRK"
+              - column:
+                  name: first_name
+                  value: "Karin"
+              - column:
+                  name: last_name
+                  value: "Brown"
+              - column:
+                  name: shipping_address
+                  value: "East Side, 78, London, GB"

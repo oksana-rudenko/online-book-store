@@ -1,0 +1,173 @@
+databaseChangeLog:
+  - changeSet:
+      id: insert books to book table
+      author: rudenko
+      changes:
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "Bloodlands"
+              - column:
+                  name: author
+                  value: "Timothy Snyder"
+              - column:
+                  name: isbn
+                  value: "978-1541600065"
+              - column:
+                  name: price
+                  value: "26"
+              - column:
+                  name: description
+                  value: "Europe between Hitler and Stalin"
+              - column:
+                  name: cover_image
+                  value: "https://m.media-amazon.com/images/I/818gorntorL._SL1500_.jpg"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "The Red Prince"
+              - column:
+                  name: author
+                  value: "Timothy Snyder"
+              - column:
+                  name: isbn
+                  value: "978-1845951207"
+              - column:
+                  name: price
+                  value: "31"
+              - column:
+                  name: description
+                  value: "Life of Wilhelm von Habsburg, a Habsburg archduke"
+              - column:
+                  name: cover_image
+                  value: "https://m.media-amazon.com/images/I/716rUFPputL._SL1360_.jpg"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "The Gates of Europe"
+              - column:
+                  name: author
+                  value: "Serhii Plohy"
+              - column:
+                  name: isbn
+                  value: "978-0465094868"
+              - column:
+                  name: price
+                  value: "28"
+              - column:
+                  name: description
+                  value: "A History of Ukraine"
+              - column:
+                  name: cover_image
+                  value: "https://m.media-amazon.com/images/I/812JAY5J35L._SL1500_.jpg"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "Yalta: The Price of Peace"
+              - column:
+                  name: author
+                  value: "Serhii Plohy"
+              - column:
+                  name: isbn
+                  value: "978-0143118923"
+              - column:
+                  name: price
+                  value: "18"
+              - column:
+                  name: description
+                  value: "A colorful and gripping portrait of the three aging leaders at their historic encounter"
+              - column:
+                  name: cover_image
+                  value: "https://m.media-amazon.com/images/I/812KNLE4wUL._SL1500_.jpg"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "Witcher. The Last Wish"
+              - column:
+                  name: author
+                  value: "Andrzej Sapkowski"
+              - column:
+                  name: isbn
+                  value: "9780316333528"
+              - column:
+                  name: price
+                  value: "19"
+              - column:
+                  name: description
+                  value: "Magic adventures"
+              - column:
+                  name: cover_image
+                  value: "https://m.media-amazon.com/images/I/81MTXlALp+L._SL1500_.jpg"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "Witcher. Sword of Destiny"
+              - column:
+                  name: author
+                  value: "Andrzej Sapkowski"
+              - column:
+                  name: isbn
+                  value: "978-0316389709"
+              - column:
+                  name: price
+                  value: "16"
+              - column:
+                  name: description
+                  value: "Magic adventures"
+              - column:
+                  name: cover_image
+                  value: "https://m.media-amazon.com/images/I/81aS2U3uJPL._SL1500_.jpg"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "Witcher. Blood of Elves"
+              - column:
+                  name: author
+                  value: "Andrzej Sapkowski"
+              - column:
+                  name: isbn
+                  value: "978-0316453363"
+              - column:
+                  name: price
+                  value: "21"
+              - column:
+                  name: description
+                  value: "Magic adventures"
+              - column:
+                  name: cover_image
+                  value: "https://m.media-amazon.com/images/I/81EP7I-z39L._SL1500_.jpg"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "The Colour Of Magic"
+              - column:
+                  name: author
+                  value: "Terry Pratchett"
+              - column:
+                  name: isbn
+                  value: "978-0552166591"
+              - column:
+                  name: price
+                  value: "25"
+              - column:
+                  name: description
+                  value: "Modern fiction"
+              - column:
+                  name: cover_image
+                  value: "https://m.media-amazon.com/images/I/81FCDPPcX+L._SL1500_.jpg"
