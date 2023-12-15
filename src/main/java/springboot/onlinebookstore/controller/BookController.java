@@ -35,7 +35,7 @@ public class BookController {
         return bookService.save(bookDto);
     }
 
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @GetMapping
     @Operation(summary = "Get all books",
             description = "Getting all available books from book store")
@@ -43,7 +43,7 @@ public class BookController {
         return bookService.findAll(pageable);
     }
 
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @GetMapping("/{id}")
     @Operation(summary = "Get a book by its ID",
             description = "Getting a book from book store by its ID")
@@ -68,7 +68,7 @@ public class BookController {
         bookService.deleteById(id);
     }
 
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @GetMapping("/search")
     @Operation(summary = "Search books by set of different parameters",
             description = "Searching all available books from book store by given parameters")
