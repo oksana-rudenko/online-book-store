@@ -1,5 +1,7 @@
 package springboot.onlinebookstore.service.impl;
 
+import java.util.HashSet;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import springboot.onlinebookstore.dto.user.request.UserRegistrationRequestDto;
@@ -7,7 +9,9 @@ import springboot.onlinebookstore.dto.user.response.UserResponseDto;
 import springboot.onlinebookstore.exception.EntityNotFoundException;
 import springboot.onlinebookstore.exception.RegistrationException;
 import springboot.onlinebookstore.mapper.UserMapper;
+import springboot.onlinebookstore.model.Role;
 import springboot.onlinebookstore.model.User;
+import springboot.onlinebookstore.repository.role.RoleRepository;
 import springboot.onlinebookstore.repository.user.UserRepository;
 import springboot.onlinebookstore.service.UserService;
 
@@ -16,6 +20,7 @@ import springboot.onlinebookstore.service.UserService;
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final RoleRepository roleRepository;
 
     @Override
     public UserResponseDto register(UserRegistrationRequestDto requestDto)
@@ -25,6 +30,12 @@ public class UserServiceImpl implements UserService {
                     + "Please, enter another email");
         }
         User user = userMapper.toModel(requestDto);
+        Role userRole = roleRepository.findByName(Role.RoleName.USER)
+                .orElseThrow(() -> new RegistrationException("Can't find role: "
+                        + Role.RoleName.USER));
+        Set<Role> roles = new HashSet<>();
+        roles.add(userRole);
+        user.setRoles(roles);
         User savedUser = userRepository.save(user);
         return userMapper.toUserResponseDto(savedUser);
     }
