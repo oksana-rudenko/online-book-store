@@ -62,6 +62,7 @@ public class User implements UserDetails {
                 .collect(Collectors.toList());
     }
 
+    @Override
     public String getPassword() {
         return password;
     }
