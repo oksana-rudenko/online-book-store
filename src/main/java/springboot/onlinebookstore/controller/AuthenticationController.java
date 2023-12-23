@@ -36,7 +36,7 @@ public class AuthenticationController {
     @PostMapping("/login")
     @Operation(summary = "User's validation",
             description = "Endpoint for existing user validation in the book store application")
-    public UserLoginResponseDto login(@RequestBody UserLoginRequestDto request) {
+    public UserLoginResponseDto login(@RequestBody @Valid UserLoginRequestDto request) {
         return authenticationService.authenticate(request);
     }
 }
