@@ -3,6 +3,7 @@ package springboot.onlinebookstore.service.impl;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import springboot.onlinebookstore.dto.user.request.UserRegistrationRequestDto;
 import springboot.onlinebookstore.dto.user.response.UserResponseDto;
@@ -21,6 +22,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public UserResponseDto register(UserRegistrationRequestDto requestDto)
@@ -29,7 +31,12 @@ public class UserServiceImpl implements UserService {
             throw new RegistrationException("User with such email is already present. "
                     + "Please, enter another email");
         }
-        User user = userMapper.toModel(requestDto);
+        User user = new User();
+        user.setEmail(requestDto.getEmail());
+        user.setPassword(passwordEncoder.encode(requestDto.getPassword()));
+        user.setFirstName(requestDto.getFirstName());
+        user.setLastName(requestDto.getLastName());
+        user.setShippingAddress(requestDto.getShippingAddress());
         Role userRole = roleRepository.findByName(Role.RoleName.USER)
                 .orElseThrow(() -> new RegistrationException("Can't find role: "
                         + Role.RoleName.USER));
