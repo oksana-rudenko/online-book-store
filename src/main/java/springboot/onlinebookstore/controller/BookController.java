@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import springboot.onlinebookstore.dto.book.BookSearchParametersDto;
 import springboot.onlinebookstore.dto.book.request.CreateBookRequestDto;
-import springboot.onlinebookstore.dto.book.response.BookDto;
+import springboot.onlinebookstore.dto.book.response.BookResponseDto;
 import springboot.onlinebookstore.service.BookService;
 
 @Tag(name = "Book management", description = "Endpoints for managing books")
@@ -31,7 +31,7 @@ public class BookController {
     @PostMapping
     @Operation(summary = "Create a new book",
             description = "Creating a new book in the book store data base")
-    public BookDto createBook(@RequestBody @Valid CreateBookRequestDto bookDto) {
+    public BookResponseDto createBook(@RequestBody @Valid CreateBookRequestDto bookDto) {
         return bookService.save(bookDto);
     }
 
@@ -39,7 +39,7 @@ public class BookController {
     @GetMapping
     @Operation(summary = "Get all books",
             description = "Getting all available books from book store")
-    public List<BookDto> getAll(Pageable pageable) {
+    public List<BookResponseDto> getAll(Pageable pageable) {
         return bookService.findAll(pageable);
     }
 
@@ -47,7 +47,7 @@ public class BookController {
     @GetMapping("/{id}")
     @Operation(summary = "Get a book by its ID",
             description = "Getting a book from book store by its ID")
-    public BookDto getBookById(@PathVariable Long id) {
+    public BookResponseDto getBookById(@PathVariable Long id) {
         return bookService.findById(id);
     }
 
@@ -55,8 +55,8 @@ public class BookController {
     @PutMapping("/{id}")
     @Operation(summary = "Update a book by its ID",
             description = "Updating an actual information about a book by its ID")
-    public BookDto update(@PathVariable Long id,
-                          @RequestBody @Valid CreateBookRequestDto requestDto) {
+    public BookResponseDto update(@PathVariable Long id,
+                                  @RequestBody @Valid CreateBookRequestDto requestDto) {
         return bookService.update(id, requestDto);
     }
 
@@ -72,7 +72,8 @@ public class BookController {
     @GetMapping("/search")
     @Operation(summary = "Search books by set of different parameters",
             description = "Searching all available books from book store by given parameters")
-    public List<BookDto> searchBooks(BookSearchParametersDto searchParameters, Pageable pageable) {
+    public List<BookResponseDto> searchBooks(BookSearchParametersDto searchParameters,
+                                             Pageable pageable) {
         return bookService.searchBooks(searchParameters, pageable);
     }
 }

@@ -1,0 +1,41 @@
+databaseChangeLog:
+  - changeSet:
+      id: insert categories to category table
+      author: rudenko
+      changes:
+        - insert:
+            tableName: categories
+            columns:
+              - column:
+                  name: name
+                  value: "History"
+              - column:
+                  name: description
+                  value: "Europe History"
+        - insert:
+            tableName: categories
+            columns:
+              - column:
+                  name: name
+                  value: "Action & Adventure Fiction"
+              - column:
+                  name: description
+                  value: "Mystery, Fantasy, Science Fiction"
+        - insert:
+            tableName: categories
+            columns:
+              - column:
+                  name: name
+                  value: "Magic & Fantasy"
+              - column:
+                  name: description
+                  value: "Magic & Fantasy Graphic Novels"
+        - insert:
+            tableName: categories
+            columns:
+              - column:
+                  name: name
+                  value: "Humor & Entertainment"
+              - column:
+                  name: description
+                  value: "Humor, Movies, Television, Pop Culture"

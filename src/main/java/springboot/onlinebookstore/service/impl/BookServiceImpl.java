@@ -7,7 +7,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import springboot.onlinebookstore.dto.book.BookSearchParametersDto;
 import springboot.onlinebookstore.dto.book.request.CreateBookRequestDto;
-import springboot.onlinebookstore.dto.book.response.BookDto;
+import springboot.onlinebookstore.dto.book.response.BookDtoWithoutCategoryIds;
+import springboot.onlinebookstore.dto.book.response.BookResponseDto;
 import springboot.onlinebookstore.exception.EntityNotFoundException;
 import springboot.onlinebookstore.mapper.BookMapper;
 import springboot.onlinebookstore.model.Book;
@@ -23,20 +24,20 @@ public class BookServiceImpl implements BookService {
     private final BookSpecificationBuilder bookSpecificationBuilder;
 
     @Override
-    public BookDto save(CreateBookRequestDto requestDto) {
-        Book book = bookMapper.toModel(requestDto);
+    public BookResponseDto save(CreateBookRequestDto requestDto) {
+        Book book = bookMapper.toEntity(requestDto);
         return bookMapper.toDto(bookRepository.save(book));
     }
 
     @Override
-    public List<BookDto> findAll(Pageable pageable) {
+    public List<BookResponseDto> findAll(Pageable pageable) {
         return bookRepository.findAll(pageable).stream()
                 .map(bookMapper::toDto)
                 .toList();
     }
 
     @Override
-    public BookDto findById(Long id) {
+    public BookResponseDto findById(Long id) {
         Book book = bookRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException("Book by id: " + id + " does not exist")
         );
@@ -49,17 +50,25 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
-    public BookDto update(Long id, CreateBookRequestDto requestDto) {
-        Book book = bookMapper.toModel(requestDto);
+    public BookResponseDto update(Long id, CreateBookRequestDto requestDto) {
+        Book book = bookMapper.toEntity(requestDto);
         book.setId(id);
         return bookMapper.toDto(bookRepository.save(book));
     }
 
     @Override
-    public List<BookDto> searchBooks(BookSearchParametersDto searchParameters, Pageable pageable) {
+    public List<BookResponseDto> searchBooks(BookSearchParametersDto searchParameters,
+                                             Pageable pageable) {
         Specification<Book> specification = bookSpecificationBuilder.build(searchParameters);
         return bookRepository.findAll(specification, pageable).stream()
                 .map(bookMapper::toDto)
+                .toList();
+    }
+
+    @Override
+    public List<BookDtoWithoutCategoryIds> getBooksByCategoryId(Long id, Pageable pageable) {
+        return bookRepository.findBooksByCategoryId(id, pageable).stream()
+                .map(bookMapper::toDtoWithoutCategories)
                 .toList();
     }
 }
