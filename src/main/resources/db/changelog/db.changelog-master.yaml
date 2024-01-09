@@ -23,3 +23,7 @@ databaseChangeLog:
       file: db/changelog/changes/11-create-books-categories-join-table.yaml
   - include:
       file: db/changelog/changes/12-insert-books-categories-to-books-categories-table.yaml
+  - include:
+      file: db/changelog/changes/13-create-shopping-cart-table.yaml
+  - include:
+      file: db/changelog/changes/14-create-cart-item-table.yaml
