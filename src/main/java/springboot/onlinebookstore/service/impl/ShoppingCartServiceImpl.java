@@ -32,12 +32,11 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
     public ShoppingCartResponseDto getCartByUser(Long userId) {
         if (shoppingCartRepository.findByUserId(userId).isPresent()) {
             return shoppingCartMapper.toDto(shoppingCartRepository.findByUserId(userId).get());
-        } else {
-            User user = userRepository.getReferenceById(userId);
-            ShoppingCart shoppingCart = new ShoppingCart(user);
-            shoppingCartRepository.save(shoppingCart);
-            return shoppingCartMapper.toDto(shoppingCart);
         }
+        User user = userRepository.getReferenceById(userId);
+        ShoppingCart shoppingCart = new ShoppingCart(user);
+        shoppingCartRepository.save(shoppingCart);
+        return shoppingCartMapper.toDto(shoppingCart);
     }
 
     @Override
@@ -48,22 +47,17 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
                 ));
         if (shoppingCart.getCartItems().stream()
                 .anyMatch(c -> c.getBook().getId().equals(requestDto.bookId()))) {
-            CartItem cartItem = shoppingCart.getCartItems().stream()
-                    .filter(c -> c.getBook().getId().equals(requestDto.bookId()))
-                    .findFirst()
-                    .get();
-            cartItem.setQuantity(cartItem.getQuantity() + requestDto.quantity());
-            cartItemRepository.save(cartItem);
-        } else {
-            CartItem cartItem = cartItemMapper.toEntity(requestDto);
-            cartItem.setShoppingCart(shoppingCart);
-            Book book = bookRepository.findById(requestDto.bookId()).orElseThrow(() ->
-                    new EntityNotFoundException("Can't find book with id: "
-                            + requestDto.bookId()));
-            cartItem.setBook(book);
-            cartItemRepository.save(cartItem);
-            shoppingCart.getCartItems().add(cartItem);
+            throw new RuntimeException("You already have this book in your cart. "
+                    + "Please, choose another book");
         }
+        CartItem cartItem = cartItemMapper.toEntity(requestDto);
+        cartItem.setShoppingCart(shoppingCart);
+        Book book = bookRepository.findById(requestDto.bookId()).orElseThrow(() ->
+                new EntityNotFoundException("Can't find book with id: "
+                        + requestDto.bookId()));
+        cartItem.setBook(book);
+        cartItemRepository.save(cartItem);
+        shoppingCart.getCartItems().add(cartItem);
         return shoppingCartMapper.toDto(shoppingCart);
     }
 
