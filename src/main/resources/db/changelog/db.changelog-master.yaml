@@ -27,3 +27,10 @@ databaseChangeLog:
       file: db/changelog/changes/13-create-shopping-cart-table.yaml
   - include:
       file: db/changelog/changes/14-create-cart-item-table.yaml
+  - include:
+      file: db/changelog/changes/15-create-order-table.yaml
+  - include:
+      file: db/changelog/changes/16-create-order-item-table.yaml
+
+
+
