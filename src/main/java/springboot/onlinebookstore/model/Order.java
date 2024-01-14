@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.Set;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
@@ -26,6 +27,7 @@ import org.hibernate.annotations.Where;
 @SQLDelete(sql = "UPDATE orders SET is_deleted = true WHERE id=?")
 @Where(clause = "is_deleted=false")
 @Table(name = "orders")
+@NoArgsConstructor
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,6 +52,15 @@ public class Order {
 
     @Column(nullable = false)
     private boolean isDeleted = false;
+
+    public Order(User user, Status status, BigDecimal total,
+                 LocalDateTime orderDate, String shippingAddress) {
+        this.user = user;
+        this.status = status;
+        this.total = total;
+        this.orderDate = orderDate;
+        this.shippingAddress = shippingAddress;
+    }
 
     public enum Status {
         PENDING,

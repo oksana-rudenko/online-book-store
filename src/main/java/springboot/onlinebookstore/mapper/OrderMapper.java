@@ -7,7 +7,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import springboot.onlinebookstore.config.MapperConfig;
-import springboot.onlinebookstore.dto.order.request.OrderRequestDto;
 import springboot.onlinebookstore.dto.order.response.OrderResponseDto;
 import springboot.onlinebookstore.dto.orderitem.OrderItemResponseDto;
 import springboot.onlinebookstore.model.Order;
@@ -29,6 +28,4 @@ public interface OrderMapper {
             responseDto.setOrderItems(orderItems);
         }
     }
-
-    Order toEntity(OrderRequestDto requestDto);
 }

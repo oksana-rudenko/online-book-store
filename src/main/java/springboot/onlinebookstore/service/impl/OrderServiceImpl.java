@@ -51,16 +51,12 @@ public class OrderServiceImpl implements OrderService {
                 .map(i -> i.getBook().getPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
                 .mapToInt(BigDecimal::intValue)
                 .sum());
-        Order order = orderMapper.toEntity(requestDto);
-        order.setUser(new User(userId));
-        order.setStatus(Order.Status.PENDING);
-        order.setTotal(total);
-        order.setOrderDate(LocalDateTime.now());
+        Order order = new Order(new User(userId), Order.Status.PENDING,
+                total, LocalDateTime.now(), requestDto.shippingAddress());
         orderRepository.save(order);
-        Set<OrderItem> orderItems = cartItems.stream()
+        order.setOrderItems(cartItems.stream()
                 .map(i -> createOrderItem(i, order))
-                .collect(Collectors.toSet());
-        order.setOrderItems(orderItems);
+                .collect(Collectors.toSet()));
         return orderMapper.toDto(order);
     }
 
