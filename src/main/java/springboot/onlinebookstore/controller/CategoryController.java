@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import springboot.onlinebookstore.dto.book.response.BookDtoWithoutCategoryIds;
 import springboot.onlinebookstore.dto.category.request.CategoryRequestDto;
@@ -33,6 +35,7 @@ public class CategoryController {
     @PostMapping
     @Operation(summary = "Create a new category",
             description = "Creating a new category in the book store data base")
+    @ResponseStatus(HttpStatus.CREATED)
     public CategoryResponseDto createCategory(@RequestBody @Valid CategoryRequestDto categoryDto) {
         return categoryService.save(categoryDto);
     }
@@ -58,7 +61,7 @@ public class CategoryController {
     @Operation(summary = "Update a category by its ID",
             description = "Updating an actual information about a category by its ID")
     public CategoryResponseDto updateCategory(@PathVariable Long id,
-                                      @RequestBody @Valid CategoryRequestDto categoryDto) {
+                                              @RequestBody @Valid CategoryRequestDto categoryDto) {
         return categoryService.update(id, categoryDto);
     }
 
@@ -66,6 +69,7 @@ public class CategoryController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a category by its ID",
             description = "Soft deleting an information about a category by its ID")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteCategory(@PathVariable Long id) {
         categoryService.deleteById(id);
     }
