@@ -7,11 +7,13 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.Set;
 import lombok.Data;
+import lombok.experimental.Accessors;
 import org.hibernate.validator.constraints.ISBN;
 import springboot.onlinebookstore.validation.Image;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Accessors(chain = true)
 public class CreateBookRequestDto {
     @NotNull
     @NotEmpty

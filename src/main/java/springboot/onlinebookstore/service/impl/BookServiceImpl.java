@@ -46,11 +46,19 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public void deleteById(Long id) {
+        if (!bookRepository.existsById(id)) {
+            throw new EntityNotFoundException("Book by id: " + id
+                    + " does not exist and can't be deleted");
+        }
         bookRepository.deleteById(id);
     }
 
     @Override
     public BookResponseDto update(Long id, CreateBookRequestDto requestDto) {
+        if (!bookRepository.existsById(id)) {
+            throw new EntityNotFoundException("Can't update book by id: " + id
+                    + " as it does not exist");
+        }
         Book book = bookMapper.toEntity(requestDto);
         book.setId(id);
         return bookMapper.toDto(bookRepository.save(book));
