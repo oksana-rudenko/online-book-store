@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Set;
 import javax.sql.DataSource;
 import lombok.SneakyThrows;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,7 +33,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-import org.testcontainers.shaded.org.apache.commons.lang3.builder.EqualsBuilder;
 import springboot.onlinebookstore.dto.book.request.CreateBookRequestDto;
 import springboot.onlinebookstore.dto.book.response.BookResponseDto;
 import springboot.onlinebookstore.repository.book.BookSpecificationBuilder;
@@ -62,46 +62,36 @@ class BookControllerTest {
         fillDataBase(dataSource);
     }
 
+    @AfterAll
+    static void afterAll(@Autowired DataSource dataSource) {
+        clearDataBase(dataSource);
+    }
+
     @SneakyThrows
     static void clearDataBase(DataSource dataSource) {
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(true);
-            ScriptUtils.executeSqlScript(
-                    connection,
-                    new ClassPathResource(
-                            "database/books/remove-book-and-category-data-from-tables.sql"
-                    )
-            );
-        }
+        String path1 = "database/users/remove-role-user-and-shopping-cart-from-table.sql";
+        String path2 = "database/books/remove-book-and-category-data-from-tables.sql";
+        executeScript(dataSource, path1);
+        executeScript(dataSource, path2);
     }
 
     @SneakyThrows
     static void fillDataBase(DataSource dataSource) {
+        String path1 = "database/books/add-books-to-book-table.sql";
+        String path2 = "database/books/add-categories-to-category-table.sql";
+        String path3 = "database/books/add-category-to-book-in-book-category-table.sql";
+        executeScript(dataSource, path1);
+        executeScript(dataSource, path2);
+        executeScript(dataSource, path3);
+    }
+
+    @SneakyThrows
+    static void executeScript(DataSource dataSource, String path) {
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(true);
             ScriptUtils.executeSqlScript(
                     connection,
-                    new ClassPathResource(
-                            "database/books/add-books-to-book-table.sql"
-                    )
-            );
-        }
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(true);
-            ScriptUtils.executeSqlScript(
-                    connection,
-                    new ClassPathResource(
-                            "database/books/add-categories-to-category-table.sql"
-                    )
-            );
-        }
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(true);
-            ScriptUtils.executeSqlScript(
-                    connection,
-                    new ClassPathResource(
-                            "database/books/add-category-to-book-in-book-category-table.sql"
-                    )
+                    new ClassPathResource(path)
             );
         }
     }
@@ -114,16 +104,17 @@ class BookControllerTest {
         BookResponseDto expected = getResponseDtoFive();
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
         MvcResult result = mockMvc.perform(post(URL_TEMPLATE)
-                .content(jsonRequest)
-                .contentType(MediaType.APPLICATION_JSON))
+                        .content(jsonRequest)
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated())
                 .andReturn();
         BookResponseDto actual = objectMapper.readValue(
                 result.getResponse().getContentAsByteArray(), BookResponseDto.class
         );
+        expected.setId(actual.getId());
         Assertions.assertNotNull(actual);
         Assertions.assertNotNull(actual.getId());
-        EqualsBuilder.reflectionEquals(expected, actual, "id");
+        Assertions.assertEquals(expected, actual);
     }
 
     @WithMockUser(username = "user")
@@ -220,7 +211,7 @@ class BookControllerTest {
 
     private CreateBookRequestDto getRequestDtoOne() {
         CreateBookRequestDto requestDto = new CreateBookRequestDto();
-        requestDto.setTitle("Bloodland");
+        requestDto.setTitle("Bloodlands");
         requestDto.setAuthor("Timothy Snyder");
         requestDto.setIsbn("978-1541600065");
         requestDto.setPrice(BigDecimal.valueOf(26));
@@ -233,7 +224,7 @@ class BookControllerTest {
     private BookResponseDto getResponseDtoOne() {
         BookResponseDto responseDto = new BookResponseDto();
         responseDto.setId(1L);
-        responseDto.setTitle("Bloodland");
+        responseDto.setTitle("Bloodlands");
         responseDto.setAuthor("Timothy Snyder");
         responseDto.setIsbn("978-1541600065");
         responseDto.setPrice(BigDecimal.valueOf(26));

@@ -1,17 +1,23 @@
 package springboot.onlinebookstore.repository.book;
 
 import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.jdbc.Sql;
 import springboot.onlinebookstore.model.Book;
 import springboot.onlinebookstore.model.Category;
@@ -22,6 +28,19 @@ class BookRepositoryTest {
     private static final Long INVALID_ID = -1L;
     @Autowired
     private BookRepository bookRepository;
+
+    @AfterAll
+    static void afterAll(@Autowired DataSource dataSource) throws SQLException {
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(true);
+            ScriptUtils.executeSqlScript(
+                    connection,
+                    new ClassPathResource(
+                            "database/books/remove-book-and-category-data-from-tables.sql"
+                    )
+            );
+        }
+    }
 
     @Test
     @DisplayName("""
@@ -86,7 +105,7 @@ class BookRepositoryTest {
     private Book getBookOne() {
         Book book = new Book();
         book.setId(1L);
-        book.setTitle("Bloodland");
+        book.setTitle("Bloodlands");
         book.setAuthor("Timothy Snyder");
         book.setIsbn("978-1541600065");
         book.setPrice(BigDecimal.valueOf(26));
