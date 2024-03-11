@@ -1,11 +1,13 @@
 package springboot.onlinebookstore.controller.shoppingcart;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,7 +18,6 @@ import java.util.Set;
 import javax.sql.DataSource;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,7 +29,6 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import springboot.onlinebookstore.dto.cartitem.request.CartItemQuantityRequestDto;
@@ -37,6 +37,7 @@ import springboot.onlinebookstore.dto.cartitem.response.CartItemResponseDto;
 import springboot.onlinebookstore.dto.shoppingcart.ShoppingCartResponseDto;
 import springboot.onlinebookstore.model.Role;
 import springboot.onlinebookstore.model.User;
+import springboot.onlinebookstore.queries.SqlScriptPath;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ShoppingCartControllerTest {
@@ -69,30 +70,20 @@ class ShoppingCartControllerTest {
 
     @SneakyThrows
     static void clearDataBase(DataSource dataSource) {
-        String path1 = "database/users/remove-role-user-and-shopping-cart-from-table.sql";
-        String path2 = "database/books/remove-book-and-category-data-from-tables.sql";
-        executeScript(dataSource, path1);
-        executeScript(dataSource, path2);
+        executeScript(dataSource, SqlScriptPath.REMOVE_USER_DATA_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.REMOVE_BOOK_DATA_SCRIPT);
     }
 
     @SneakyThrows
     static void fillDataBase(DataSource dataSource) {
-        String path1 = "database/books/add-books-to-book-table.sql";
-        executeScript(dataSource, path1);
-        String path2 = "database/books/add-categories-to-category-table.sql";
-        executeScript(dataSource, path2);
-        String path3 = "database/books/add-category-to-book-in-book-category-table.sql";
-        executeScript(dataSource, path3);
-        String path4 = "database/users/add-roles-to-role-table.sql";
-        executeScript(dataSource, path4);
-        String path5 = "database/users/add-users-to-user-table.sql";
-        executeScript(dataSource, path5);
-        String path6 = "database/users/add-users-roles-to-user-role-table.sql";
-        executeScript(dataSource, path6);
-        String path7 = "database/users/add-shopping-cart-to-shopping-cart-table.sql";
-        executeScript(dataSource, path7);
-        String path8 = "database/users/add-cart-item-to-cart-item-table.sql";
-        executeScript(dataSource, path8);
+        executeScript(dataSource, SqlScriptPath.ADD_BOOK_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_CATEGORY_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_CATEGORY_TO_BOOK_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_ROLE_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_USER_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_USERS_ROLE_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_SHOPPING_CART_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_CART_ITEM_SCRIPT);
     }
 
     @SneakyThrows
@@ -114,15 +105,15 @@ class ShoppingCartControllerTest {
         CartItemResponseDto item = new CartItemResponseDto(1L, 1L, "Bloodlands", 1);
         expected.setCartItems(Set.of(item));
         User mockUser = getUser();
-        MvcResult result = mockMvc.perform(get(URL_TEMPLATE)
+        mockMvc.perform(get(URL_TEMPLATE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user(mockUser)))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(expected.getId()))
+                .andExpect(jsonPath("$.userId").value(expected.getUserId()))
+                .andExpect(jsonPath("$.cartItems").isArray())
+                .andExpect(jsonPath("$.cartItems", hasSize(1)))
                 .andReturn();
-        ShoppingCartResponseDto actual = objectMapper.readValue(
-                result.getResponse().getContentAsByteArray(), ShoppingCartResponseDto.class
-        );
-        Assertions.assertEquals(expected, actual);
     }
 
     @WithMockUser(username = "bobSmith@example.com", roles = {"USER"})
@@ -132,22 +123,20 @@ class ShoppingCartControllerTest {
         User mockUser = getUser();
         CartItemRequestDto requestDto = new CartItemRequestDto(2L, 1);
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
-        MvcResult result = mockMvc.perform(post(URL_TEMPLATE)
-                        .content(jsonRequest)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user(mockUser)))
-                .andExpect(status().isOk())
-                .andReturn();
-        ShoppingCartResponseDto actual = objectMapper.readValue(
-                result.getResponse().getContentAsByteArray(), ShoppingCartResponseDto.class
-        );
         ShoppingCartResponseDto expected = getShoppingCartResponseDto();
         CartItemResponseDto item1 = new CartItemResponseDto(1L, 1L, "Bloodlands", 1);
         CartItemResponseDto item2 = new CartItemResponseDto(2L, 2L, "The Red Prince", 1);
         expected.setCartItems(Set.of(item1, item2));
-        Assertions.assertNotNull(actual);
-        Assertions.assertNotNull(actual.getId());
-        Assertions.assertEquals(expected.getCartItems(), actual.getCartItems());
+        mockMvc.perform(post(URL_TEMPLATE)
+                        .content(jsonRequest)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(user(mockUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(expected.getId()))
+                .andExpect(jsonPath("$.userId").value(expected.getUserId()))
+                .andExpect(jsonPath("$.cartItems").isArray())
+                .andExpect(jsonPath("$.cartItems", hasSize(2)))
+                .andReturn();
     }
 
     @WithMockUser(username = "bobSmith@example.com", roles = {"USER"})
@@ -158,21 +147,18 @@ class ShoppingCartControllerTest {
         User mockUser = getUser();
         CartItemQuantityRequestDto requestDto = new CartItemQuantityRequestDto(5);
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
-        MvcResult result = mockMvc.perform(put("/cart/cart-items/{cartItemId}", itemId)
+        ShoppingCartResponseDto expected = getShoppingCartResponseDto();
+        expected.setCartItems(Set.of(new CartItemResponseDto(1L, 1L, "Bloodlands", 5)));
+        mockMvc.perform(put("/cart/cart-items/{cartItemId}", itemId)
                         .content(jsonRequest)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user(mockUser)))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(expected.getId()))
+                .andExpect(jsonPath("$.userId").value(expected.getUserId()))
+                .andExpect(jsonPath("$.cartItems").isArray())
+                .andExpect(jsonPath("$.cartItems", hasSize(1)))
                 .andReturn();
-        ShoppingCartResponseDto actual = objectMapper.readValue(
-                result.getResponse().getContentAsByteArray(), ShoppingCartResponseDto.class
-        );
-        ShoppingCartResponseDto expected = getShoppingCartResponseDto();
-        expected.setCartItems(Set.of(new CartItemResponseDto(1L, 1L, "Bloodlands", 5)));
-        Assertions.assertNotNull(actual);
-        Assertions.assertNotNull(actual.getId());
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertEquals(expected.getCartItems(), actual.getCartItems());
     }
 
     @WithMockUser(username = "bobSmith@example.com", roles = {"USER"})
@@ -181,20 +167,17 @@ class ShoppingCartControllerTest {
     void removeBookFromShoppingCart_ValidData_ReturnsUpdatedCart() throws Exception {
         Long itemId = 1L;
         User mockUser = getUser();
-        MvcResult result = mockMvc.perform(delete("/cart/cart-items/{cartItemId}", itemId)
+        ShoppingCartResponseDto expected = getShoppingCartResponseDto();
+        expected.setCartItems(Set.of());
+        mockMvc.perform(delete("/cart/cart-items/{cartItemId}", itemId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user(mockUser)))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(expected.getId()))
+                .andExpect(jsonPath("$.userId").value(expected.getUserId()))
+                .andExpect(jsonPath("$.cartItems").isArray())
+                .andExpect(jsonPath("$.cartItems", hasSize(0)))
                 .andReturn();
-        ShoppingCartResponseDto actual = objectMapper.readValue(
-                result.getResponse().getContentAsByteArray(), ShoppingCartResponseDto.class
-        );
-        ShoppingCartResponseDto expected = getShoppingCartResponseDto();
-        expected.setCartItems(Set.of());
-        Assertions.assertNotNull(actual);
-        Assertions.assertNotNull(actual.getId());
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertEquals(expected.getCartItems(), actual.getCartItems());
     }
 
     private User getUser() {

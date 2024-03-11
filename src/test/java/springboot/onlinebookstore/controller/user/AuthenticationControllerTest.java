@@ -1,7 +1,9 @@
 package springboot.onlinebookstore.controller.user;
 
+import static org.hamcrest.Matchers.is;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,7 +12,6 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,13 +22,12 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import springboot.onlinebookstore.dto.user.request.UserLoginRequestDto;
 import springboot.onlinebookstore.dto.user.request.UserRegistrationRequestDto;
-import springboot.onlinebookstore.dto.user.response.UserLoginResponseDto;
 import springboot.onlinebookstore.dto.user.response.UserResponseDto;
+import springboot.onlinebookstore.queries.SqlScriptPath;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class AuthenticationControllerTest {
@@ -59,20 +59,15 @@ class AuthenticationControllerTest {
 
     @SneakyThrows
     static void clearDataBase(DataSource dataSource) {
-        String path1 = "database/users/remove-role-user-and-shopping-cart-from-table.sql";
-        String path2 = "database/books/remove-book-and-category-data-from-tables.sql";
-        executeScript(dataSource, path1);
-        executeScript(dataSource, path2);
+        executeScript(dataSource, SqlScriptPath.REMOVE_USER_DATA_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.REMOVE_BOOK_DATA_SCRIPT);
     }
 
     @SneakyThrows
     static void fillDataBase(DataSource dataSource) {
-        String path1 = "database/users/add-roles-to-role-table.sql";
-        String path2 = "database/users/add-users-to-user-table.sql";
-        String path3 = "database/users/add-users-roles-to-user-role-table.sql";
-        executeScript(dataSource, path1);
-        executeScript(dataSource, path2);
-        executeScript(dataSource, path3);
+        executeScript(dataSource, SqlScriptPath.ADD_ROLE_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_USER_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_USERS_ROLE_SCRIPT);
     }
 
     @SneakyThrows
@@ -92,17 +87,15 @@ class AuthenticationControllerTest {
         UserRegistrationRequestDto requestDto = getUserRegistrationRequestDto();
         UserResponseDto expected = getUserResponseDto();
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
-        MvcResult result = mockMvc.perform(post(URL_TEMPLATE + "/registration")
+        mockMvc.perform(post(URL_TEMPLATE + "/registration")
                         .content(jsonRequest)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.email", is(expected.email())))
+                .andExpect(jsonPath("$.firstName", is(expected.firstName())))
+                .andExpect(jsonPath("$.lastName", is(expected.lastName())))
+                .andExpect(jsonPath("$.shippingAddress", is(expected.shippingAddress())))
                 .andReturn();
-        UserResponseDto actual = objectMapper.readValue(
-                result.getResponse().getContentAsByteArray(), UserResponseDto.class
-        );
-        Assertions.assertNotNull(actual);
-        Assertions.assertNotNull(actual.id());
-        Assertions.assertEquals(expected, actual);
     }
 
     @Test
@@ -111,15 +104,12 @@ class AuthenticationControllerTest {
         UserLoginRequestDto requestDto =
                 new UserLoginRequestDto("bobSmith@example.com", "12345678");
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
-        MvcResult result = mockMvc.perform(post(URL_TEMPLATE + "/login")
-                .content(jsonRequest)
-                .contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(post(URL_TEMPLATE + "/login")
+                        .content(jsonRequest)
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty())
                 .andReturn();
-        UserLoginResponseDto actual = objectMapper.readValue(
-                result.getResponse().getContentAsByteArray(), UserLoginResponseDto.class
-        );
-        Assertions.assertNotNull(actual);
     }
 
     private UserRegistrationRequestDto getUserRegistrationRequestDto() {

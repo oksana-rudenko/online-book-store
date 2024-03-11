@@ -1,10 +1,13 @@
 package springboot.onlinebookstore.controller.book;
 
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,13 +15,11 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import javax.sql.DataSource;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,11 +31,11 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import springboot.onlinebookstore.dto.book.request.CreateBookRequestDto;
 import springboot.onlinebookstore.dto.book.response.BookResponseDto;
+import springboot.onlinebookstore.queries.SqlScriptPath;
 import springboot.onlinebookstore.repository.book.BookSpecificationBuilder;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -69,20 +70,15 @@ class BookControllerTest {
 
     @SneakyThrows
     static void clearDataBase(DataSource dataSource) {
-        String path1 = "database/users/remove-role-user-and-shopping-cart-from-table.sql";
-        String path2 = "database/books/remove-book-and-category-data-from-tables.sql";
-        executeScript(dataSource, path1);
-        executeScript(dataSource, path2);
+        executeScript(dataSource, SqlScriptPath.REMOVE_USER_DATA_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.REMOVE_BOOK_DATA_SCRIPT);
     }
 
     @SneakyThrows
     static void fillDataBase(DataSource dataSource) {
-        String path1 = "database/books/add-books-to-book-table.sql";
-        String path2 = "database/books/add-categories-to-category-table.sql";
-        String path3 = "database/books/add-category-to-book-in-book-category-table.sql";
-        executeScript(dataSource, path1);
-        executeScript(dataSource, path2);
-        executeScript(dataSource, path3);
+        executeScript(dataSource, SqlScriptPath.ADD_BOOK_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_CATEGORY_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_CATEGORY_TO_BOOK_SCRIPT);
     }
 
     @SneakyThrows
@@ -96,28 +92,28 @@ class BookControllerTest {
         }
     }
 
-    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    @WithMockUser(username = "bobSmith@example.com", roles = {"ADMIN"})
     @Test
     @DisplayName("Create a new book and saving it to database")
     void createBook_ValidRequestDto_ReturnsValidResponse() throws Exception {
         CreateBookRequestDto requestDto = getRequestDtoFive();
         BookResponseDto expected = getResponseDtoFive();
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
-        MvcResult result = mockMvc.perform(post(URL_TEMPLATE)
+        mockMvc.perform(post(URL_TEMPLATE)
                         .content(jsonRequest)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.title", is(expected.getTitle())))
+                .andExpect(jsonPath("$.author", is(expected.getAuthor())))
+                .andExpect(jsonPath("$.isbn", is(expected.getIsbn())))
+                .andExpect(jsonPath("$.price").value(expected.getPrice()))
+                .andExpect(jsonPath("$.description", is(expected.getDescription())))
+                .andExpect(jsonPath("$.coverImage", is(expected.getCoverImage())))
+                .andExpect(jsonPath("$.categoryIds").value(4))
                 .andReturn();
-        BookResponseDto actual = objectMapper.readValue(
-                result.getResponse().getContentAsByteArray(), BookResponseDto.class
-        );
-        expected.setId(actual.getId());
-        Assertions.assertNotNull(actual);
-        Assertions.assertNotNull(actual.getId());
-        Assertions.assertEquals(expected, actual);
     }
 
-    @WithMockUser(username = "user")
+    @WithMockUser(username = "bobSmith@example.com")
     @Test
     @DisplayName("Get all books from database, returns list of four books")
     void getAll_FourValidBooks_ReturnsValidList() throws Exception {
@@ -130,34 +126,38 @@ class BookControllerTest {
         expected.add(responseDtoTwo);
         expected.add(responseDtoThree);
         expected.add(responseDtoFour);
-        MvcResult result = mockMvc.perform(get(URL_TEMPLATE)
+        mockMvc.perform(get(URL_TEMPLATE)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.*").isArray())
+                .andExpect(jsonPath("$.*", hasSize(4)))
+                .andExpect(jsonPath("$[0].title").value(responseDtoOne.getTitle()))
+                .andExpect(jsonPath("$[1].title").value(responseDtoTwo.getTitle()))
+                .andExpect(jsonPath("$[2].title").value(responseDtoThree.getTitle()))
+                .andExpect(jsonPath("$[3].title").value(responseDtoFour.getTitle()))
                 .andReturn();
-        BookResponseDto[] bookList = objectMapper
-                .readValue(result.getResponse().getContentAsByteArray(), BookResponseDto[].class);
-        List<BookResponseDto> actual = Arrays.stream(bookList).toList();
-        Assertions.assertEquals(4, actual.size());
-        Assertions.assertEquals(expected, actual);
     }
 
-    @WithMockUser(username = "user")
+    @WithMockUser(username = "bobSmith@example.com")
     @Test
     @DisplayName("Get book from database by id, returns valid book")
     void getBookById_ValidBook_ReturnsValidBook() throws Exception {
         BookResponseDto expected = getResponseDtoOne();
         long id = 1L;
-        MvcResult result = mockMvc.perform(get("/books/{id}", id)
+        mockMvc.perform(get("/books/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title", is(expected.getTitle())))
+                .andExpect(jsonPath("$.author", is(expected.getAuthor())))
+                .andExpect(jsonPath("$.isbn", is(expected.getIsbn())))
+                .andExpect(jsonPath("$.price").value(expected.getPrice()))
+                .andExpect(jsonPath("$.description", is(expected.getDescription())))
+                .andExpect(jsonPath("$.coverImage", is(expected.getCoverImage())))
+                .andExpect(jsonPath("$.categoryIds").value(1))
                 .andReturn();
-        BookResponseDto actual = objectMapper.readValue(
-                result.getResponse().getContentAsByteArray(), BookResponseDto.class
-        );
-        Assertions.assertEquals(expected, actual);
     }
 
-    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    @WithMockUser(username = "bobSmith@example.com", roles = {"ADMIN"})
     @Test
     @DisplayName("Update book by its id, returns valid book")
     void update_ValidBook_ReturnsUpdatedBook() throws Exception {
@@ -169,18 +169,21 @@ class BookControllerTest {
         expected.setPrice(BigDecimal.valueOf(22L));
         long id = 1L;
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
-        MvcResult result = mockMvc.perform(put("/books/{id}", id)
+        mockMvc.perform(put("/books/{id}", id)
                         .content(jsonRequest)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title", is(expected.getTitle())))
+                .andExpect(jsonPath("$.author", is(expected.getAuthor())))
+                .andExpect(jsonPath("$.isbn", is(expected.getIsbn())))
+                .andExpect(jsonPath("$.price").value(expected.getPrice()))
+                .andExpect(jsonPath("$.description", is(expected.getDescription())))
+                .andExpect(jsonPath("$.coverImage", is(expected.getCoverImage())))
+                .andExpect(jsonPath("$.categoryIds").value(1))
                 .andReturn();
-        BookResponseDto actual = objectMapper.readValue(
-                result.getResponse().getContentAsByteArray(), BookResponseDto.class
-        );
-        Assertions.assertEquals(expected, actual);
     }
 
-    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    @WithMockUser(username = "bobSmith@example.com", roles = {"ADMIN"})
     @Test
     @DisplayName("Delete book by its id, status no content")
     void deleteById_ValidBook_StatusNoContent() throws Exception {
@@ -190,7 +193,7 @@ class BookControllerTest {
                 .andExpect(status().isNoContent());
     }
 
-    @WithMockUser(username = "user")
+    @WithMockUser(username = "bobSmith@example.com")
     @Test
     @DisplayName("Search books by parameters, returns valid books list")
     void searchBooks_ValidParameters_ReturnsValidList() throws Exception {
@@ -198,15 +201,19 @@ class BookControllerTest {
         List<BookResponseDto> expected = new ArrayList<>();
         expected.add(book1);
         String searchParams = "?author=Timothy Snyder&price=10,30";
-        MvcResult result = mockMvc.perform(get("/books/search" + searchParams)
+        mockMvc.perform(get("/books/search" + searchParams)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.*", hasSize(1)))
+                .andExpect(jsonPath("$.*.title").value(book1.getTitle()))
+                .andExpect(jsonPath("$.*.author").value(book1.getAuthor()))
+                .andExpect(jsonPath("$.*.title").value(book1.getTitle()))
+                .andExpect(jsonPath("$.*.isbn").value(book1.getIsbn()))
+                .andExpect(jsonPath("$.*.price").value(book1.getPrice().intValue()))
+                .andExpect(jsonPath("$.*.description").value(book1.getDescription()))
+                .andExpect(jsonPath("$.*.coverImage").value(book1.getCoverImage()))
+                .andExpect(jsonPath("$.*.categoryIds", hasSize(1)))
                 .andReturn();
-        BookResponseDto[] bookList = objectMapper
-                .readValue(result.getResponse().getContentAsByteArray(), BookResponseDto[].class);
-        List<BookResponseDto> actual = Arrays.stream(bookList).toList();
-        Assertions.assertEquals(1, actual.size());
-        Assertions.assertEquals(expected, actual);
     }
 
     private CreateBookRequestDto getRequestDtoOne() {

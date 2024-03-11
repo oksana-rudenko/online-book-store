@@ -1,10 +1,13 @@
 package springboot.onlinebookstore.controller.category;
 
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,12 +15,10 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import javax.sql.DataSource;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,6 +37,7 @@ import springboot.onlinebookstore.dto.book.response.BookDtoWithoutCategoryIds;
 import springboot.onlinebookstore.dto.category.request.CategoryRequestDto;
 import springboot.onlinebookstore.dto.category.response.CategoryResponseDto;
 import springboot.onlinebookstore.model.Category;
+import springboot.onlinebookstore.queries.SqlScriptPath;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class CategoryControllerTest {
@@ -67,20 +69,15 @@ class CategoryControllerTest {
 
     @SneakyThrows
     static void clearDataBase(DataSource dataSource) {
-        String path1 = "database/users/remove-role-user-and-shopping-cart-from-table.sql";
-        String path2 = "database/books/remove-book-and-category-data-from-tables.sql";
-        executeScript(dataSource, path1);
-        executeScript(dataSource, path2);
+        executeScript(dataSource, SqlScriptPath.REMOVE_USER_DATA_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.REMOVE_BOOK_DATA_SCRIPT);
     }
 
     @SneakyThrows
     static void fillDataBase(DataSource dataSource) {
-        String path1 = "database/books/add-books-to-book-table.sql";
-        String path2 = "database/books/add-categories-to-category-table.sql";
-        String path3 = "database/books/add-category-to-book-in-book-category-table.sql";
-        executeScript(dataSource, path1);
-        executeScript(dataSource, path2);
-        executeScript(dataSource, path3);
+        executeScript(dataSource, SqlScriptPath.ADD_BOOK_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_CATEGORY_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_CATEGORY_TO_BOOK_SCRIPT);
     }
 
     @SneakyThrows
@@ -94,50 +91,50 @@ class CategoryControllerTest {
         }
     }
 
-    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    @WithMockUser(username = "bobSmith@example.com", roles = {"ADMIN"})
     @Test
     @DisplayName("Create a new category and saving it to database")
     void createCategory_ValidRequestDto_ReturnsValidResponse() throws Exception {
         Category category = getCategoryOne();
         CategoryRequestDto requestDto = getCategoryRequestDto(category);
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
-        MvcResult result = mockMvc.perform(post(URL_TEMPLATE)
+        CategoryResponseDto expected = getCategoryResponseDto(category);
+        mockMvc.perform(post(URL_TEMPLATE)
                         .content(jsonRequest)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").isNotEmpty())
+                .andExpect(jsonPath("$.name", is(expected.name())))
+                .andExpect(jsonPath("$.description", is(expected.description())))
                 .andReturn();
-        CategoryResponseDto actual = objectMapper.readValue(
-                result.getResponse().getContentAsByteArray(), CategoryResponseDto.class
-        );
-        CategoryResponseDto expected = getCategoryResponseDto(category);
-        Assertions.assertNotNull(actual);
-        Assertions.assertNotNull(actual.id());
-        Assertions.assertEquals(expected.name(), actual.name());
-        Assertions.assertEquals(expected.description(), actual.description());
     }
 
-    @WithMockUser(username = "user")
+    @WithMockUser(username = "bobSmith@example.com")
     @Test
     @DisplayName("Get all categories from database, returns list of four categories")
     void getAll_FourValidCategories_ReturnsValidList() throws Exception {
         List<CategoryResponseDto> expected = new ArrayList<>();
-        expected.add(getCategoryResponseDto(getCategoryOne()));
-        expected.add(getCategoryResponseDto(getCategoryTwo()));
-        expected.add(getCategoryResponseDto(getCategoryThree()));
-        expected.add(getCategoryResponseDto(getCategoryFour()));
-        MvcResult result = mockMvc.perform(get(URL_TEMPLATE)
+        CategoryResponseDto dtoOne = getCategoryResponseDto(getCategoryOne());
+        expected.add(dtoOne);
+        CategoryResponseDto dtoTwo = getCategoryResponseDto(getCategoryTwo());
+        expected.add(dtoTwo);
+        CategoryResponseDto dtoThree = getCategoryResponseDto(getCategoryThree());
+        expected.add(dtoThree);
+        CategoryResponseDto dtoFour = getCategoryResponseDto(getCategoryFour());
+        expected.add(dtoFour);
+        mockMvc.perform(get(URL_TEMPLATE)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.*").isArray())
+                .andExpect(jsonPath("$.*", hasSize(4)))
+                .andExpect(jsonPath("$[0].name", is(dtoOne.name())))
+                .andExpect(jsonPath("$[1].name", is(dtoTwo.name())))
+                .andExpect(jsonPath("$[2].name", is(dtoThree.name())))
+                .andExpect(jsonPath("$[3].name", is(dtoFour.name())))
                 .andReturn();
-        CategoryResponseDto[] categoryList = objectMapper
-                .readValue(result.getResponse().getContentAsByteArray(),
-                        CategoryResponseDto[].class);
-        List<CategoryResponseDto> actual = Arrays.stream(categoryList).toList();
-        Assertions.assertEquals(4, actual.size());
-        Assertions.assertEquals(expected, actual);
     }
 
-    @WithMockUser(username = "user")
+    @WithMockUser(username = "bobSmith@example.com")
     @Test
     @DisplayName("Get category from database by id, returns valid category response dto")
     void getCategoryById_ValidId_ReturnsValidCategoryDto() throws Exception {
@@ -146,14 +143,12 @@ class CategoryControllerTest {
         MvcResult result = mockMvc.perform(get("/categories/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name", is(expected.name())))
+                .andExpect(jsonPath("$.description", is(expected.description())))
                 .andReturn();
-        CategoryResponseDto actual = objectMapper.readValue(
-                result.getResponse().getContentAsByteArray(), CategoryResponseDto.class
-        );
-        Assertions.assertEquals(expected, actual);
     }
 
-    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    @WithMockUser(username = "bobSmith@example.com", roles = {"ADMIN"})
     @Test
     @DisplayName("Updating existing category by valid id")
     void updateCategory_ValidId_ReturnsValidCategoryDto() throws Exception {
@@ -167,14 +162,12 @@ class CategoryControllerTest {
                         .content(jsonRequest)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name", is(expected.name())))
+                .andExpect(jsonPath("$.description", is(expected.description())))
                 .andReturn();
-        CategoryResponseDto actual = objectMapper.readValue(
-                result.getResponse().getContentAsByteArray(), CategoryResponseDto.class
-        );
-        Assertions.assertEquals(expected, actual);
     }
 
-    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    @WithMockUser(username = "bobSmith@example.com", roles = {"ADMIN"})
     @Test
     @DisplayName("Delete category by its id, valid status no content")
     void deleteCategory_ValidId_StatusNoContent() throws Exception {
@@ -184,7 +177,7 @@ class CategoryControllerTest {
                 .andExpect(status().isNoContent());
     }
 
-    @WithMockUser(username = "user")
+    @WithMockUser(username = "bobSmith@example.com")
     @Test
     @DisplayName("Get books list by valid category id, returns valid list")
     void getBooksByCategoryId_ValidCategoryId_ReturnsBookList() throws Exception {
@@ -193,16 +186,15 @@ class CategoryControllerTest {
         expected.add(getBookTwo());
         expected.add(getBookThree());
         long id = 1L;
-        MvcResult result = mockMvc.perform(get("/categories/{id}/books", id)
+        mockMvc.perform(get("/categories/{id}/books", id)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.*").isArray())
+                .andExpect(jsonPath("$.*", hasSize(3)))
+                .andExpect(jsonPath("$[0].title", is(getBookOne().getTitle())))
+                .andExpect(jsonPath("$[1].title", is(getBookTwo().getTitle())))
+                .andExpect(jsonPath("$[2].title", is(getBookThree().getTitle())))
                 .andReturn();
-        BookDtoWithoutCategoryIds[] categoryList = objectMapper
-                .readValue(result.getResponse().getContentAsByteArray(),
-                        BookDtoWithoutCategoryIds[].class);
-        List<BookDtoWithoutCategoryIds> actual = Arrays.stream(categoryList).toList();
-        Assertions.assertEquals(3, actual.size());
-        Assertions.assertEquals(expected, actual);
     }
 
     private Category getCategoryOne() {

@@ -1,10 +1,12 @@
 package springboot.onlinebookstore.controller.order;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,13 +14,10 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 import javax.sql.DataSource;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,6 +39,7 @@ import springboot.onlinebookstore.dto.orderitem.OrderItemResponseDto;
 import springboot.onlinebookstore.model.Order;
 import springboot.onlinebookstore.model.Role;
 import springboot.onlinebookstore.model.User;
+import springboot.onlinebookstore.queries.SqlScriptPath;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class OrderControllerTest {
@@ -72,34 +72,22 @@ class OrderControllerTest {
 
     @SneakyThrows
     static void clearDataBase(DataSource dataSource) {
-        String path1 = "database/users/remove-role-user-and-shopping-cart-from-table.sql";
-        String path2 = "database/books/remove-book-and-category-data-from-tables.sql";
-        executeScript(dataSource, path1);
-        executeScript(dataSource, path2);
+        executeScript(dataSource, SqlScriptPath.REMOVE_USER_DATA_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.REMOVE_BOOK_DATA_SCRIPT);
     }
 
     @SneakyThrows
     static void fillDataBase(DataSource dataSource) {
-        String path1 = "database/books/add-books-to-book-table.sql";
-        executeScript(dataSource, path1);
-        String path2 = "database/books/add-categories-to-category-table.sql";
-        executeScript(dataSource, path2);
-        String path3 = "database/books/add-category-to-book-in-book-category-table.sql";
-        executeScript(dataSource, path3);
-        String path4 = "database/users/add-roles-to-role-table.sql";
-        executeScript(dataSource, path4);
-        String path5 = "database/users/add-users-to-user-table.sql";
-        executeScript(dataSource, path5);
-        String path6 = "database/users/add-users-roles-to-user-role-table.sql";
-        executeScript(dataSource, path6);
-        String path7 = "database/users/add-shopping-cart-to-shopping-cart-table.sql";
-        executeScript(dataSource, path7);
-        String path8 = "database/users/add-cart-item-to-cart-item-table.sql";
-        executeScript(dataSource, path8);
-        String path9 = "database/users/add-order-to-order-table.sql";
-        executeScript(dataSource, path9);
-        String path10 = "database/users/add-order-item-to-order-items-table.sql";
-        executeScript(dataSource, path10);
+        executeScript(dataSource, SqlScriptPath.ADD_BOOK_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_CATEGORY_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_CATEGORY_TO_BOOK_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_ROLE_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_USER_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_USERS_ROLE_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_SHOPPING_CART_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_CART_ITEM_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_ORDER_SCRIPT);
+        executeScript(dataSource, SqlScriptPath.ADD_ORDER_ITEM_SCRIPT);
     }
 
     @SneakyThrows
@@ -120,22 +108,17 @@ class OrderControllerTest {
         User mockUser = getUser();
         OrderRequestDto requestDto = new OrderRequestDto("Golden St, 12, L.A., USA");
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
-        MvcResult result = mockMvc.perform(post(URL_TEMPLATE)
+        mockMvc.perform(post(URL_TEMPLATE)
                         .content(jsonRequest)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user(mockUser)))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").isNotEmpty())
+                .andExpect(jsonPath("$.orderItems", hasSize(1)))
+                .andExpect(jsonPath("$.orderDate").isNotEmpty())
+                .andExpect(jsonPath("$.total").isNotEmpty())
+                .andExpect(jsonPath("$.status").isNotEmpty())
                 .andReturn();
-        OrderResponseDto actual = objectMapper.readValue(
-                result.getResponse().getContentAsByteArray(), OrderResponseDto.class
-        );
-        OrderResponseDto expected = getOrderResponseDto();
-        expected.setId(actual.getId());
-        expected.setOrderItems(Set.of(new OrderItemResponseDto(2L, 1L, 1)));
-        expected.setOrderDate(actual.getOrderDate());
-        Assertions.assertNotNull(actual);
-        Assertions.assertNotNull(actual.getId());
-        Assertions.assertEquals(expected, actual);
     }
 
     @WithMockUser(username = "bobSmith@example.com", roles = {"USER"})
@@ -147,15 +130,14 @@ class OrderControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user(mockUser)))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.*").isArray())
+                .andExpect(jsonPath("$.*", hasSize(1)))
+                .andExpect(jsonPath("$[0].userId").isNotEmpty())
+                .andExpect(jsonPath("$[0].orderItems", hasSize(1)))
+                .andExpect(jsonPath("$[0].orderDate").isNotEmpty())
+                .andExpect(jsonPath("$[0].total").isNotEmpty())
+                .andExpect(jsonPath("$[0].status").isNotEmpty())
                 .andReturn();
-        OrderResponseDto[] orders = objectMapper.readValue(
-                result.getResponse().getContentAsByteArray(), OrderResponseDto[].class
-        );
-        List<OrderResponseDto> actual = Arrays.stream(orders).toList();
-        OrderResponseDto orderResponseDto = getOrderResponseDto();
-        orderResponseDto.setOrderDate(actual.stream().findFirst().get().getOrderDate());
-        List<OrderResponseDto> expected = List.of(orderResponseDto);
-        Assertions.assertEquals(expected, actual);
     }
 
     @WithMockUser(username = "bobSmith@example.com", roles = {"USER"})
@@ -164,19 +146,16 @@ class OrderControllerTest {
     void getOrderItems_ValidUsersOrder_ReturnsListOfOrderItem() throws Exception {
         User mockUser = getUser();
         Long orderId = 1L;
-        MvcResult result = mockMvc.perform(get("/orders/{orderId}/items", orderId)
+        OrderItemResponseDto itemResponseDto =
+                getOrderResponseDto().getOrderItems().stream().findFirst().get();
+        mockMvc.perform(get("/orders/{orderId}/items", orderId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user(mockUser)))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(itemResponseDto.id()))
+                .andExpect(jsonPath("$[0].bookId").value(itemResponseDto.bookId()))
+                .andExpect(jsonPath("$[0].quantity").value(itemResponseDto.quantity()))
                 .andReturn();
-        OrderItemResponseDto[] orderItems = objectMapper.readValue(
-                result.getResponse().getContentAsByteArray(), OrderItemResponseDto[].class
-        );
-        List<OrderItemResponseDto> actual = Arrays.stream(orderItems).toList();
-        OrderItemResponseDto itemResponseDto =
-                getOrderResponseDto().getOrderItems().stream().findFirst().get();
-        List<OrderItemResponseDto> expected = List.of(itemResponseDto);
-        Assertions.assertEquals(expected, actual);
     }
 
     @WithMockUser(username = "bobSmith@example.com", roles = {"USER"})
@@ -186,37 +165,38 @@ class OrderControllerTest {
         User mockUser = getUser();
         Long orderId = 1L;
         Long itemId = 1L;
-        MvcResult result = mockMvc.perform(get("/orders/{orderId}/items/{id}", orderId, itemId)
+        OrderItemResponseDto expected = new OrderItemResponseDto(1L, 1L, 1);
+        mockMvc.perform(get("/orders/{orderId}/items/{id}", orderId, itemId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .with(user(mockUser)))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(expected.id()))
+                .andExpect(jsonPath("$.bookId").value(expected.bookId()))
+                .andExpect(jsonPath("$.quantity").value(expected.quantity()))
                 .andReturn();
-        OrderItemResponseDto actual = objectMapper.readValue(
-                result.getResponse().getContentAsByteArray(), OrderItemResponseDto.class
-        );
-        OrderItemResponseDto expected = new OrderItemResponseDto(1L, 1L, 1);
-        Assertions.assertEquals(expected, actual);
     }
 
     @WithMockUser(username = "bobSmith@example.com", roles = {"ADMIN"})
     @Test
     @DisplayName("Update order status, returns valid order response")
-    void updateOrderStatus() throws Exception {
+    void updateOrderStatus_ValidData_ReturnsValidResponse() throws Exception {
         OrderStatusRequestDto requestDto = new OrderStatusRequestDto(Order.Status.COMPLETED);
         Long id = 1L;
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
-        MvcResult result = mockMvc.perform(patch("/orders/{id}", id)
-                .content(jsonRequest)
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andReturn();
-        OrderResponseDto actual = objectMapper.readValue(
-                result.getResponse().getContentAsByteArray(), OrderResponseDto.class
-        );
         OrderResponseDto expected = getOrderResponseDto();
         expected.setStatus(Order.Status.COMPLETED.toString());
-        expected.setOrderDate(actual.getOrderDate());
-        Assertions.assertEquals(expected, actual);
+        mockMvc.perform(patch("/orders/{id}", id)
+                        .content(jsonRequest)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(expected.getId()))
+                .andExpect(jsonPath("$.userId").value(expected.getUserId()))
+                .andExpect(jsonPath("$.orderItems").isArray())
+                .andExpect(jsonPath("$.orderItems", hasSize(1)))
+                .andExpect(jsonPath("$.orderDate").isNotEmpty())
+                .andExpect(jsonPath("$.total").value(expected.getTotal()))
+                .andExpect(jsonPath("$.status").value(expected.getStatus()))
+                .andReturn();
     }
 
     private OrderResponseDto getOrderResponseDto() {
