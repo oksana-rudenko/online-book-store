@@ -1,5 +1,5 @@
 insert into books (id, title, author, isbn, price, description, cover_image, is_deleted)
-values (1, 'Bloodland', 'Timothy Snyder', '978-1541600065', 26,
+values (1, 'Bloodlands', 'Timothy Snyder', '978-1541600065', 26,
 'Europe between Hitler and Stalin', 'https://m.media-amazon.com/images/I/818gorntorL._SL1500_.jpg', false);
 insert into books (id, title, author, isbn, price, description, cover_image, is_deleted)
 values (2, 'The Red Prince', 'Timothy Snyder', '978-1845951207', 31,
